@@ -4,17 +4,21 @@ import io
 import torch
 from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
 
-# Load model once
-device = "cuda" if torch.cuda.is_available() else "cpu"
-shape_pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
-    "tencent/Hunyuan3D-2mini",
-    subfolder="hunyuan3d-dit-v2-mini-turbo",
-    use_safetensors=True,
-    device=device,
-)
+shape_pipe = None
 
 def handler(event):
+    global shape_pipe
+
     try:
+        if shape_pipe is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            shape_pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
+                "tencent/Hunyuan3D-2mini",
+                subfolder="hunyuan3d-dit-v2-mini-turbo",
+                use_safetensors=True,
+                device=device,
+            )
+
         input_data = event["input"]
         image_b64 = input_data["image"]
         filename = input_data.get("filename", "model.stl")

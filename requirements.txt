@@ -1,0 +1,23 @@
+# Core Libraries
+torch
+torchvision
+transformers
+diffusers
+einops
+numpy
+opencv-python
+omegaconf
+tqdm
+pybind11
+ninja
+
+# 3D Mesh Processing
+trimesh
+pymeshlab
+pygltflib
+xatlas
+
+# API & Serving
+fastapi
+uvicorn
+rembg

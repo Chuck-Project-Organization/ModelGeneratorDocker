@@ -1,29 +1,9 @@
-# # Core Libraries
+# Core Libraries
 torch
 torchvision
-# transformers
-# diffusers
-# einops
-# numpy
-# opencv-python
-# omegaconf
-# tqdm
-# pybind11
-# ninja
-
-# # 3D Mesh Processing
-# trimesh
-# pymeshlab
-# pygltflib
-# xatlas
-
-# # API & Serving
-# fastapi
-# uvicorn
-# rembg
 
 # Image Processing
 Pillow
 
-# 3D Generation
-hy3dgen
+# 3D Generation (Intentional error to avoid charging)
+# hy3dgen # (Intentional error to avoid charging)

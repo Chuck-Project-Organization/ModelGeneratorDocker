@@ -26,4 +26,4 @@ torchvision
 Pillow
 
 # 3D Generation
-# hy3dgen
+hy3dgen

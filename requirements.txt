@@ -1,23 +1,29 @@
-# Core Libraries
+# # Core Libraries
 torch
 torchvision
-transformers
-diffusers
-einops
-numpy
-opencv-python
-omegaconf
-tqdm
-pybind11
-ninja
+# transformers
+# diffusers
+# einops
+# numpy
+# opencv-python
+# omegaconf
+# tqdm
+# pybind11
+# ninja
 
-# 3D Mesh Processing
-trimesh
-pymeshlab
-pygltflib
-xatlas
+# # 3D Mesh Processing
+# trimesh
+# pymeshlab
+# pygltflib
+# xatlas
 
-# API & Serving
-fastapi
-uvicorn
-rembg
+# # API & Serving
+# fastapi
+# uvicorn
+# rembg
+
+# Image Processing
+Pillow
+
+# 3D Generation
+hy3dgen

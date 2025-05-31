@@ -8,12 +8,12 @@ RUN sed -i 's|http://|https://|g' /etc/apt/sources.list && \
     pip install --upgrade pip && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY handler.py .
 
 # RunPod looks for `handler.py`
 CMD ["python3", "-u", "handler.py"]

@@ -1,5 +1,11 @@
 import runpod
-import time  
+import boto3
+import time
+import tempfile
+import os
+
+s3 = boto3.client('s3')
+bucket_name = os.environ.get('AWS_BUCKET_NAME', 'chuck-assets')
 
 def handler(event):
 #   This function processes incoming requests to your Serverless endpoint.
@@ -21,9 +27,27 @@ def handler(event):
     print(f"Sleeping for {seconds} seconds...")
     
     # You can replace this sleep call with your own Python code
-    time.sleep(seconds)  
-    
-    return prompt 
+    time.sleep(seconds)
+
+    with tempfile.NamedTemporaryFile(suffix=".txt") as temp_text:
+        temp_text.write(prompt)
+        temp_text.flush()
+
+        # Upload the file to S3
+        print(f"Uploading {temp_text.name} to S3 bucket {bucket_name}...")
+        key = f"prompts/{temp_text.name.split('/')[-1]}"
+        s3.upload_file(temp_text.name, bucket_name, key)
+
+        presigned_url = s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket_name, 'Key': key},
+            ExpiresIn=3600  # URL valid for 1 hour
+        )
+
+    return {
+        'status': 'success',
+        'message': f'Prompt processed and uploaded to S3: {presigned_url}'
+    }
 
 # Start the Serverless function when the script is run
 if __name__ == '__main__':

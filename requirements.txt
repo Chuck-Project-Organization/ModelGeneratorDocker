@@ -1,6 +1,9 @@
 # Run pod
 runpod
 
+# AWS
+boto3
+
 # # Core Libraries
 # torch
 # torchvision

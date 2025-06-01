@@ -30,7 +30,7 @@ def handler(event):
     time.sleep(seconds)
 
     with tempfile.NamedTemporaryFile(suffix=".txt") as temp_text:
-        temp_text.write(prompt)
+        temp_text.write(prompt.encode('utf-8'))
         temp_text.flush()
 
         # Upload the file to S3

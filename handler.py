@@ -1,57 +1,88 @@
-import base64
-from PIL import Image
-import io
-import torch
-from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
-
-shape_pipe = None
+import runpod
+import time  
 
 def handler(event):
-    global shape_pipe
+#   This function processes incoming requests to your Serverless endpoint.
+#
+#    Args:
+#        event (dict): Contains the input data and request metadata
+#       
+#    Returns:
+#       Any: The result to be returned to the client
+    
+    # Extract input data
+    print(f"Worker Start")
+    input = event['input']
+    
+    prompt = input.get('prompt')  
+    seconds = input.get('seconds', 0)  
 
-    try:
-        if shape_pipe is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            shape_pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
-                "tencent/Hunyuan3D-2mini",
-                subfolder="hunyuan3d-dit-v2-mini-turbo",
-                use_safetensors=True,
-                device=device,
-            )
+    print(f"Received prompt: {prompt}")
+    print(f"Sleeping for {seconds} seconds...")
+    
+    # You can replace this sleep call with your own Python code
+    time.sleep(seconds)  
+    
+    return prompt 
 
-        input_data = event["input"]
-        image_b64 = input_data["image"]
-        filename = input_data.get("filename", "model.stl")
+# Start the Serverless function when the script is run
+if __name__ == '__main__':
+    runpod.serverless.start({'handler': handler })
 
-        # Decode image
-        image_bytes = base64.b64decode(image_b64)
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+# import base64
+# from PIL import Image
+# import io
+# import torch
+# from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
 
-        # Generate model
-        with torch.inference_mode():
-            result = shape_pipe(
-                image=image,
-                num_inference_steps=10,
-                octree_resolution=180,
-                num_chunks=60000,
-                generator=torch.manual_seed(12355),
-                output_type="trimesh"
-            )
+# shape_pipe = None
 
-        # Export to STL and encode
-        buffer = io.BytesIO()
-        result[0].export(buffer, file_type="stl")
-        buffer.seek(0)
-        stl_b64 = base64.b64encode(buffer.read()).decode("utf-8")
+# def handler(event):
+#     global shape_pipe
 
-        return {
-            "output": {
-                "filename": filename,
-                "stl": stl_b64
-            }
-        }
+#     try:
+#         if shape_pipe is None:
+#             device = "cuda" if torch.cuda.is_available() else "cpu"
+#             shape_pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
+#                 "tencent/Hunyuan3D-2mini",
+#                 subfolder="hunyuan3d-dit-v2-mini-turbo",
+#                 use_safetensors=True,
+#                 device=device,
+#             )
 
-    except Exception as e:
-        return {
-            "error": str(e)
-        }
+#         input_data = event["input"]
+#         image_b64 = input_data["image"]
+#         filename = input_data.get("filename", "model.stl")
+
+#         # Decode image
+#         image_bytes = base64.b64decode(image_b64)
+#         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+#         # Generate model
+#         with torch.inference_mode():
+#             result = shape_pipe(
+#                 image=image,
+#                 num_inference_steps=10,
+#                 octree_resolution=180,
+#                 num_chunks=60000,
+#                 generator=torch.manual_seed(12355),
+#                 output_type="trimesh"
+#             )
+
+#         # Export to STL and encode
+#         buffer = io.BytesIO()
+#         result[0].export(buffer, file_type="stl")
+#         buffer.seek(0)
+#         stl_b64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+#         return {
+#             "output": {
+#                 "filename": filename,
+#                 "stl": stl_b64
+#             }
+#         }
+
+#     except Exception as e:
+#         return {
+#             "error": str(e)
+#         }

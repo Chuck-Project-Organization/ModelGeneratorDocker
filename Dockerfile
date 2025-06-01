@@ -13,7 +13,7 @@ WORKDIR /
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY handler.py .
+COPY handler.py /
 
 # RunPod looks for `handler.py`
 CMD ["python3", "-u", "handler.py"]

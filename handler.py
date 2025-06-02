@@ -4,22 +4,27 @@ import tempfile
 import base64
 import os
 import uuid
+import torch
+from PIL import Image
+import io
+from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
 
 # Initialize S3 client
 s3 = boto3.client('s3')
 bucket_name = os.environ.get('AWS_BUCKET_NAME', 'chuck-assets')
 
-def handler(event):
-    '''
-    This function processes incoming requests to your Serverless endpoint.
+# Initialize your model globally (only loaded once per container)
+# It makes initialization faster for subsequent requests
+device = "cuda" if torch.cuda.is_available() else "cpu"
+shape_pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
+    "tencent/Hunyuan3D-2mini",
+    subfolder="hunyuan3d-dit-v2-mini-turbo",
+    use_safetensors=True,
+    device=device,
+)
 
-    Args:
-        event (dict): Contains the input data and request metadata
-        
-    Returns:
-        dict: The result to be returned to the client
-    '''
-    print(f"Worker Start")
+def handler(event):
+    print("Worker Start")
     input_data = event['input']
 
     # Get base64 encoded image from input
@@ -27,36 +32,66 @@ def handler(event):
     if not image_b64:
         return {'status': 'error', 'message': 'No image provided'}
 
+    # Generate one single UUID for both files
+    file_id = str(uuid.uuid4())
+
     # Decode the base64 image
     image_bytes = base64.b64decode(image_b64)
 
-    # Write image to temporary file
+    # Load image into PIL
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+    # Save input image to temp file for S3 upload
     with tempfile.NamedTemporaryFile(suffix=".png") as temp_image:
-        temp_image.write(image_bytes)
+        image.save(temp_image.name)
         temp_image.flush()
 
-        # Create unique key for S3
-        key = f"images/{uuid.uuid4()}.png"
+        # Upload input image to S3
+        image_key = f"images/{file_id}.png"
+        s3.upload_file(temp_image.name, bucket_name, image_key)
 
-        # Upload to S3
-        print(f"Uploading {temp_image.name} to S3 bucket {bucket_name}...")
-        s3.upload_file(temp_image.name, bucket_name, key)
-
-        # Generate presigned URL valid for 1 hour
-        presigned_url = s3.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': bucket_name, 'Key': key},
-            ExpiresIn=3600
+    # Run inference
+    with torch.inference_mode():
+        result = shape_pipe(
+            image=image,
+            num_inference_steps=10,
+            octree_resolution=180,
+            num_chunks=60000,
+            generator=torch.manual_seed(12355),
+            output_type="trimesh"
         )
+
+    # Save STL to temp file
+    with tempfile.NamedTemporaryFile(suffix=".stl", delete=False) as temp_stl:
+        result[0].export(temp_stl.name, file_type="stl")
+        stl_path = temp_stl.name
+
+    # Upload STL to S3
+    stl_key = f"models/{file_id}.stl"
+    s3.upload_file(stl_path, bucket_name, stl_key)
+
+    # Generate presigned URLs
+    image_url = s3.generate_presigned_url(
+        'get_object',
+        Params={'Bucket': bucket_name, 'Key': image_key},
+        ExpiresIn=3600
+    )
+    stl_url = s3.generate_presigned_url(
+        'get_object',
+        Params={'Bucket': bucket_name, 'Key': stl_key},
+        ExpiresIn=3600
+    )
 
     return {
         'status': 'success',
-        's3_url': presigned_url
+        'uuid': file_id,
+        'image_url': image_url,
+        'stl_url': stl_url
     }
 
-# Start the Serverless function when the script is run
 if __name__ == '__main__':
     runpod.serverless.start({'handler': handler })
+
 
 
 # import base64

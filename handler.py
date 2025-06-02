@@ -1,57 +1,58 @@
 import runpod
 import boto3
-import time
 import tempfile
+import base64
 import os
+import uuid
 
+# Initialize S3 client
 s3 = boto3.client('s3')
 bucket_name = os.environ.get('AWS_BUCKET_NAME', 'chuck-assets')
 
 def handler(event):
-#   This function processes incoming requests to your Serverless endpoint.
-#
-#    Args:
-#        event (dict): Contains the input data and request metadata
-#       
-#    Returns:
-#       Any: The result to be returned to the client
-    
-    # Extract input data
+    '''
+    This function processes incoming requests to your Serverless endpoint.
+
+    Args:
+        event (dict): Contains the input data and request metadata
+        
+    Returns:
+        dict: The result to be returned to the client
+    '''
     print(f"Worker Start")
-    input = event['input']
-    
-    prompt = input.get('prompt')  
-    seconds = input.get('seconds', 0)  
+    input_data = event['input']
 
-    print(f"Received prompt: {prompt}")
-    print(f"Sleeping for {seconds} seconds...")
-    
-    # You can replace this sleep call with your own Python code
-    time.sleep(seconds)
+    # Get base64 encoded image from input
+    image_b64 = input_data.get('image_base64')
+    if not image_b64:
+        return {'status': 'error', 'message': 'No image provided'}
 
-    with tempfile.NamedTemporaryFile(suffix=".txt") as temp_text:
-        temp_text.write(prompt.encode('utf-8'))
-        temp_text.flush()
+    # Decode the base64 image
+    image_bytes = base64.b64decode(image_b64)
 
-        # Upload the file to S3
-        print(f"Uploading {temp_text.name} to S3 bucket {bucket_name}...")
-        key = f"prompts/{temp_text.name.split('/')[-1]}"
-        s3.upload_file(temp_text.name, bucket_name, key)
+    # Write image to temporary file
+    with tempfile.NamedTemporaryFile(suffix=".png") as temp_image:
+        temp_image.write(image_bytes)
+        temp_image.flush()
 
+        # Create unique key for S3
+        key = f"images/{uuid.uuid4()}.png"
+
+        # Upload to S3
+        print(f"Uploading {temp_image.name} to S3 bucket {bucket_name}...")
+        s3.upload_file(temp_image.name, bucket_name, key)
+
+        # Generate presigned URL valid for 1 hour
         presigned_url = s3.generate_presigned_url(
             'get_object',
             Params={'Bucket': bucket_name, 'Key': key},
-            ExpiresIn=3600  # URL valid for 1 hour
+            ExpiresIn=3600
         )
 
     return {
         'status': 'success',
-        'message': f'Prompt processed and uploaded to S3: {presigned_url}'
+        's3_url': presigned_url
     }
-
-# Start the Serverless function when the script is run
-if __name__ == '__main__':
-    runpod.serverless.start({'handler': handler })
 
 # import base64
 # from PIL import Image

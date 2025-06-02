@@ -54,6 +54,11 @@ def handler(event):
         's3_url': presigned_url
     }
 
+# Start the Serverless function when the script is run
+if __name__ == '__main__':
+    runpod.serverless.start({'handler': handler })
+
+
 # import base64
 # from PIL import Image
 # import io

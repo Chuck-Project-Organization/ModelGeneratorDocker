@@ -14,12 +14,13 @@ s3 = boto3.client('s3')
 bucket_name = os.environ.get('AWS_BUCKET_NAME', 'chuck-assets')
 
 # Get model from the mounted S3 bucket in the Runpod Volume
-MODEL_PATH = "./runpod-volume"
+MODEL_PATH = "/runpod-volume"
 
 # Initialize your model globally (only loaded once per container)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 shape_pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
     MODEL_PATH,
+    subfolder="",
     use_safetensors=True,
     device=device,
 )

@@ -31,6 +31,14 @@ def handler(event):
 
     # Get base64 encoded image from input
     image_b64 = input_data.get('image_base64')
+
+    # Get user ID from input
+    user_id = input_data.get('user_id')
+
+    # If no user ID is provided, stop processing
+    if not user_id:
+        return {'status': 'error', 'message': 'No user ID provided'}
+
     if not image_b64:
         return {'status': 'error', 'message': 'No image provided'}
 
@@ -88,7 +96,8 @@ def handler(event):
         'status': 'success',
         'uuid': file_id,
         'image_url': image_url,
-        'stl_url': stl_url
+        'stl_url': stl_url,
+        'user_id': user_id
     }
 
 if __name__ == '__main__':

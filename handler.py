@@ -8,10 +8,14 @@ import torch
 from PIL import Image
 import io
 from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
+import os
+import requests
 
 # Initialize S3 client
 s3 = boto3.client('s3')
 bucket_name = os.environ.get('AWS_BUCKET_NAME', 'chuck-assets')
+webhook_secret = os.environ.get('WEBHOOK_SECRET')
+webhook_url = os.environ.get('WEBHOOK_URL')
 
 # Get model from the mounted S3 bucket in the Runpod Volume
 MODEL_PATH = "/runpod-volume"
@@ -92,13 +96,25 @@ def handler(event):
         ExpiresIn=3600
     )
 
-    return {
+    body = {
         'status': 'success',
         'uuid': file_id,
         'image_url': image_url,
         'stl_url': stl_url,
         'user_id': user_id
     }
+
+    headers = {
+        'X-Auth-Token': webhook_secret
+    }
+
+    requests.post(
+        webhook_url,
+        json=body,
+        headers=headers
+    )
+
+    return body
 
 if __name__ == '__main__':
     runpod.serverless.start({'handler': handler })

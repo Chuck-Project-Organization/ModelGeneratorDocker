@@ -3,16 +3,15 @@ import boto3
 import tempfile
 import base64
 import os
-import uuid
 import torch
 from PIL import Image
 import io
 from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 def log(message, level="ℹ️"):
-    print(f"{level} [{datetime.utcnow().isoformat()}] {message}")
+    print(f"{level} [{datetime.now(timezone.utc).isoformat()}] {message}")
 
 # Initialize S3 client
 s3 = boto3.client('s3')
@@ -34,11 +33,14 @@ shape_pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
     device=device,
 )
 
-def handler(event):
+def handler(job):
     try:
         log("🟢 Worker started")
 
-        input_data = event.get('input', {})
+        file_id = job.get('id')
+        log(f"Files ID determined as job ID: {file_id}")
+
+        input_data = job.get('input', {})
         user_id = input_data.get('user_id')
         image_b64 = input_data.get('image_base64')
 
@@ -49,9 +51,6 @@ def handler(event):
         if not image_b64:
             log("Missing image", "❌")
             return {'status': 'error', 'message': 'No image provided'}
-
-        file_id = str(uuid.uuid4())
-        log(f"Generated file_id: {file_id}")
 
         # Decode base64 and prepare image
         image_bytes = base64.b64decode(image_b64)
@@ -87,7 +86,7 @@ def handler(event):
 
         body = {
             'status': 'success',
-            'uuid': file_id,
+            'job_id': file_id,
             'image_url': image_url,
             'stl_url': stl_url,
             'user_id': user_id

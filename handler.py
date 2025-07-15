@@ -67,7 +67,7 @@ def handler(job):
             result = shape_pipe(
                 image=image,
                 num_inference_steps=10,
-                octree_resolution=256,
+                octree_resolution=512,
                 num_chunks=60000,
                 generator=torch.manual_seed(12355),
                 output_type="trimesh"

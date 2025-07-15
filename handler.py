@@ -9,6 +9,8 @@ import io
 from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
 import requests
 from datetime import datetime, timezone
+import pymeshlab
+
 
 def log(message, level="ℹ️"):
     print(f"{level} [{datetime.now(timezone.utc).isoformat()}] {message}")
@@ -67,14 +69,35 @@ def handler(job):
             result = shape_pipe(
                 image=image,
                 num_inference_steps=10,
-                octree_resolution=512,
+                # Boosting the octree resolution both increases file size and time to generate
+                # by a lot. We should avoid it
+                octree_resolution=128,
                 num_chunks=60000,
                 generator=torch.manual_seed(12355),
                 output_type="trimesh"
             )
 
+        # Post-process the mesh
+        log("🔧 Post-processing mesh...")
+        if not result or len(result) == 0:
+            raise ValueError("No mesh generated from the input image.")
+
+        # Save original mesh to OBJ for pymeshlab
+        with tempfile.NamedTemporaryFile(suffix=".obj", delete=False) as temp_obj:
+            result[0].export(temp_obj.name, file_type="obj")
+            obj_path = temp_obj.name
+
+        # Use PyMeshLab to smooth/refine
+        ms = pymeshlab.MeshSet()
+        ms.load_new_mesh(obj_path)
+
+        # Apply Catmull-Clark subdivision and smoothing
+        ms.apply_filter('subdivision_surfaces_catmull_clark', iterations=1)
+        ms.apply_filter('laplacian_smooth', iteration=5)
+
+        # Save to STL for S3
         with tempfile.NamedTemporaryFile(suffix=".stl", delete=False) as temp_stl:
-            result[0].export(temp_stl.name, file_type="stl")
+            ms.save_current_mesh(temp_stl.name, file_format='stl')
             stl_path = temp_stl.name
 
         stl_key = f"models/{file_id}.stl"

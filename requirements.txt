@@ -13,3 +13,6 @@ Pillow
 
 # 3D Generation (Intentional error to avoid charging)
 hy3dgen # (Intentional error to avoid charging)
+
+# 3D Post-Processing
+pymeshlab

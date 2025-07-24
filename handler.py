@@ -62,12 +62,16 @@ def handler(job):
             s3.upload_file(temp_image.name, bucket_name, image_key)
             log(f"📤 Uploaded input image to s3://{bucket_name}/{image_key}")
 
+        # Get octree parameter (default 512, max 512)
+        octree = input_data.get('octree', 512)
+        octree = min(int(octree), 512)
+
         with torch.inference_mode():
             log("🧠 Running inference...")
             result = shape_pipe(
                 image=image,
                 num_inference_steps=10,
-                octree_resolution=256,
+                octree_resolution=octree,
                 num_chunks=60000,
                 generator=torch.manual_seed(12355),
                 output_type="trimesh"

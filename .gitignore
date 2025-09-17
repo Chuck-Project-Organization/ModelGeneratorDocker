@@ -3,3 +3,6 @@ __pycache__
 *.pyc
 .vscode
 venv
+
+# folder for local testing files
+local_test/

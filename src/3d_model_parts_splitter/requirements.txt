@@ -1,0 +1,39 @@
+# Run pod
+runpod
+
+# Must have libraries according to documentation
+# https://github.com/nv-tlabs/PartField?tab=readme-ov-file#pretrained-model
+
+# AWS
+boto3
+
+# Core utilities
+psutil                 # system and process monitoring (used for profiling GPU/CPU usage)
+loguru                 # flexible logging library
+
+# Deep learning framework
+lightning==2.2         # PyTorch Lightning – training loop, model structuring
+h5py                   # HDF5 file format support (large datasets, pretrained weights)
+yacs                   # YAML-based configuration system
+
+# Geometry / mesh processing
+trimesh                # mesh loading, analysis, and manipulation
+mesh2sdf               # compute signed distance fields from meshes
+tetgen                 # tetrahedral mesh generation
+pymeshlab              # Python wrapper for MeshLab (mesh filtering/cleanup)
+plyfile                # reading/writing PLY 3D model files
+open3d                 # visualization and geometry processing toolkit
+vtk                    # 3D visualization, mesh operations, volume rendering
+
+# Math / ML utilities
+einops                 # concise tensor rearrangements
+scikit-image           # image processing (augmentations, 2D ops relevant for 3D training)
+
+# Graphics / visualization
+libigl                 # geometry processing library
+polyscope              # interactive 3D visualization for meshes/point clouds
+potpourri3d            # geometric algorithms (geodesics, mesh processing, etc.)
+
+# Parsing / CLI
+simple_parsing         # argparse-like library for structured configs
+arrgh                  # helper for building CLIs with argparse-style interfaces
